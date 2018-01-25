@@ -1,0 +1,19 @@
+<launch>
+    <!-- Start bebop -->
+  <include file="$(find bebop_tools)/launch/bebop_nodelet_iv.launch" />
+
+    <!-- Start camera -->
+  <include file="$(find usb_cam)/launch/usb_cam-log.launch"/>
+
+    <!-- tag trackers-->
+  <include file="bebop_tag_tracker.launch" />
+  <include file="feature_tag_tracker.launch" />
+
+  <!-- Launch package nodes
+  <node pkg="ORB_SLAM2" type="Mono" name="Mono" output="screen" args="../config/ORBvoc.txt ../config/bebop1.yaml" />
+ -->
+
+  <!-- package nodes -->
+  <node name="bebop_controller" pkg="jetyak_dispatch" type="controller_node" output="screen" />
+  <node name="feature_tracker" pkg="jetyak_dispatch" type="feature_finder_node" output="screen" />
+</launch>
