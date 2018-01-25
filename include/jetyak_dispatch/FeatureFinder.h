@@ -18,6 +18,7 @@ Modified: Jan 23 2018
 class FeatureFinder
 {
   public:
+    FeatureFinder(ros::NodeHandle& nh);
     void arTagCallback(const ar_track_alvar_msgs::AlvarMarkers::ConstPtr& msg);
   private:
     ros::Publisher featurePub;

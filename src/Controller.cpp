@@ -33,7 +33,6 @@ Controller::Controller(ros::NodeHandle& nh)
   baseCamSub = nh.subscribe("base_cam_tracker/ar_pose_marker",5,&Controller::baseCamCallback, this);
   featureSub = nh.subscribe("feature_finder",5,&Controller::featureFinderCallback, this);
   gpsSub = nh.subscribe("bebop/fix",5,&Controller::gpsCallback,this);
-  altitudeSub = nh.subscribe("bebop/states/ardrone3/PilotingState/AltitudeChanged",5,&Controller::altitudeCallback, this);
 
   //assorted variable initializations
   lastSpottedLanding.x=lastSpottedLanding.y=lastSpottedLanding.z=0.0;
@@ -119,21 +118,21 @@ void Controller::featureFinderCallback(const geometry_msgs::Pose::ConstPtr& msg)
     setDispatchState(dispatched);
   else if(state==dispatched)
   {
-    lastFeaturePoint.x=msg.position.x;
-    lastFeaturePoint.y=msg.position.y;
-    lastFeaturePoint.z=msg.position.z;
+    lastFeaturePoint.x=msg->position.x;
+    lastFeaturePoint.y=msg->position.y;
+    lastFeaturePoint.z=msg->position.z;
 
-    if(msg.position.x<=1)
+    if(msg->position.x<=1)
     {
       setDispatchState(returning);
     }
     else
     {
-      z_pid->update(msg.position.z);
-      yaw_pid->update(msg.position.y);
+      z_pid->update(msg->position.z);
+      yaw_pid->update(msg->position.y);
 
-      double vel = std::min(maxDispatchVel,msg.position.x/5-.5);
-      double angle = std::atan2(msg.position.y,msg.position.x);
+      double vel = std::min(maxDispatchVel,msg->position.x/5-.5);
+      double angle = std::atan2(msg->position.y,msg->position.x);
 
       sendCmd(vel*std::cos(angle),vel*std::sin(angle),z_pid->signal,yaw_pid->signal);
     }

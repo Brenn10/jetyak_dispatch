@@ -37,8 +37,6 @@ class Controller
     void baseCamCallback(const ar_track_alvar_msgs::AlvarMarkers::ConstPtr& msg);
     void featureFinderCallback(const geometry_msgs::Pose::ConstPtr& msg);
     void gpsCallback(const sensor_msgs::NavSatFix::ConstPtr& msg);
-    void altitudeCallback(const bebop_msgs::Ardrone3PilotingStateAltitudeChanged::ConstPtr& msg);
-
   private:
 
     //State tracker
@@ -58,8 +56,7 @@ class Controller
     //Subscribers
     ros::Subscriber baseCamSub,
       featureSub,
-      gpsSub,
-      altitudeSub;
+      gpsSub;
 
     //PID Controllers
     PIDController *yaw_pid,
@@ -67,13 +64,16 @@ class Controller
       *x_pid,
       *y_pid;
 
-
+    double goalAltitude;
+    double currAltitude;
+    double maxDispatchVel;
     double landingHeight;
     double landingHeightDecrement;
     double currLandingGoal=1.0;
 
     //keeps track of where the quad is while landing
     geometry_msgs::Point lastSpottedLanding;
+    geometry_msgs::Point lastFeaturePoint;
 
     //empty message so i dont have to recreate constantly
     std_msgs::Empty empty_msg;
