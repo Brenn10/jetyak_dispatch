@@ -15,8 +15,8 @@
   </node>
 
     <!-- tag trackers-->
-  <include ns="bebop_tag_tracker" file="bebop_tag_tracker.launch" />
-  <include ns="feature_tag_tracker" file="feature_tag_tracker.launch" />
+  <include ns="bebop_tag_tracker" file="$(find jetyak_dispatch)/launch/bebop_tag_tracker.launch" />
+  <include ns="feature_tag_tracker" file="$(find jetyak_dispatch)/launch/feature_tag_tracker.launch" />
 
   <!-- Launch package nodes
   <node pkg="ORB_SLAM2" type="Mono" name="Mono" output="screen" args="../config/ORBvoc.txt ../config/bebop1.yaml" />

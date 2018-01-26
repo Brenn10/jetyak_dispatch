@@ -134,7 +134,7 @@ void Controller::featureFinderCallback(const geometry_msgs::Pose::ConstPtr& msg)
       double vel = std::min(maxDispatchVel,msg->position.x/5-.5);
       double angle = std::atan2(msg->position.y,msg->position.x);
 
-      sendCmd(vel*std::cos(angle),vel*std::sin(angle),z_pid->signal,yaw_pid->signal);
+      sendCmd(-vel*std::cos(angle),-vel*std::sin(angle),z_pid->signal,yaw_pid->signal);
     }
   }
 
