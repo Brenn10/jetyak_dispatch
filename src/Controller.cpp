@@ -180,6 +180,7 @@ void Controller::setDispatchState(State s)
       break;
     }
   }
+  this->state=s;
 }
 void Controller::takeoff()
 {

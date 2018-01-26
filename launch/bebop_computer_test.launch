@@ -32,4 +32,6 @@
   </node>
 
   <node name="feature_tracker" pkg="jetyak_dispatch" type="feature_finder_node" output="screen" />
+
+  <include file="$(find bebop_tools)/launch/joy_teleop.launch"/>
 </launch>
