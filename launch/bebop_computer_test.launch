@@ -3,17 +3,33 @@
   <include file="$(find bebop_tools)/launch/bebop_nodelet_iv.launch" />
 
     <!-- Start camera -->
-  <include file="$(find usb_cam)/launch/usb_cam-log.launch"/>
+  <node name="usb_cam" pkg="usb_cam" type="usb_cam_node" output="screen">
+    <param name="video_device" value="/dev/video1"/>
+    <param name="image_width" value="1280"/>
+    <param name="image_height" value="720"/>
+    <param name="pixel_format" value="yuyv"/>
+    <param name="camera_frame_id" value="usb_cam"/>
+    <param name="io_method" value="mmap"/>
+    <param name="brightness" value="150"/>
+    <param name="contrast" value="110"/>
+  </node>
 
     <!-- tag trackers-->
-  <include file="bebop_tag_tracker.launch" />
-  <include file="feature_tag_tracker.launch" />
+  <include ns="bebop_tag_tracker" file="bebop_tag_tracker.launch" />
+  <include ns="feature_tag_tracker" file="feature_tag_tracker.launch" />
 
   <!-- Launch package nodes
   <node pkg="ORB_SLAM2" type="Mono" name="Mono" output="screen" args="../config/ORBvoc.txt ../config/bebop1.yaml" />
  -->
 
   <!-- package nodes -->
-  <node name="bebop_controller" pkg="jetyak_dispatch" type="controller_node" output="screen" />
+  <node name="bebop_controller" pkg="jetyak_dispatch" type="controller_node" output="screen" >
+    <param name="maxDispatchVel" type="double" value=".5"/>
+    <param name="goalAltitude" type="double" value=".5"/>
+    <param name="landingHeight" type="double" value=".05"/>
+    <param name="landingHeightDecrement" type="double" value=".01"/>
+
+  </node>
+
   <node name="feature_tracker" pkg="jetyak_dispatch" type="feature_finder_node" output="screen" />
 </launch>

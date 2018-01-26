@@ -64,12 +64,12 @@ class Controller
       *x_pid,
       *y_pid;
 
-    double goalAltitude;
+    double landStartAlt;
     double currAltitude;
     double maxDispatchVel;
     double landingHeight;
     double landingHeightDecrement;
-    double currLandingGoal=1.0;
+    double currLandingGoal;
 
     //keeps track of where the quad is while landing
     geometry_msgs::Point lastSpottedLanding;

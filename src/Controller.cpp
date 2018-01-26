@@ -25,21 +25,21 @@ Controller::Controller(ros::NodeHandle& nh)
   y_pid=new PIDController(.25,.8,0.0);
 
   //Publishers
-  landPub = nh.advertise<std_msgs::Empty>("bebop/land",1);
-  takeOffPub = nh.advertise<std_msgs::Empty>("bebop/takeoff",1);
-  cmdVelPub = nh.advertise<geometry_msgs::Twist>("bebop/cmd_vel",1);
+  landPub = nh.advertise<std_msgs::Empty>("/bebop/land",1);
+  takeOffPub = nh.advertise<std_msgs::Empty>("/bebop/takeoff",1);
+  cmdVelPub = nh.advertise<geometry_msgs::Twist>("/bebop/cmd_vel",1);
 
   //Subscribers
-  baseCamSub = nh.subscribe("base_cam_tracker/ar_pose_marker",5,&Controller::baseCamCallback, this);
+  baseCamSub = nh.subscribe("bebop_tag_tracker/ar_pose_marker",5,&Controller::baseCamCallback, this);
   featureSub = nh.subscribe("feature_finder",5,&Controller::featureFinderCallback, this);
-  gpsSub = nh.subscribe("bebop/fix",5,&Controller::gpsCallback,this);
+  gpsSub = nh.subscribe("/bebop/fix",5,&Controller::gpsCallback,this);
 
   //assorted variable initializations
   lastSpottedLanding.x=lastSpottedLanding.y=lastSpottedLanding.z=0.0;
 
   //ros parameters
   nh.param<double>("maxDispatchVel",maxDispatchVel,.5);
-  nh.param<double>("goalAltitude",goalAltitude,2.0);
+  nh.param<double>("landStartAlt",landStartAlt,2.0);
   nh.param<double>("landingHeight",landingHeight,.05);
   nh.param<double>("landingHeightDecrement",landingHeightDecrement,.005);
 
@@ -162,7 +162,7 @@ void Controller::setDispatchState(State s)
     case landing:{
       ROS_WARN("%s","Landing");
       sendCmd(0,0,0,0);
-      currLandingGoal=1.0;
+      currLandingGoal=landStartAlt;
       break;
     }
     case landed:{
@@ -183,7 +183,8 @@ void Controller::setDispatchState(State s)
 }
 void Controller::takeoff()
 {
-  takeOffPub.publish(empty_msg);
+  //takeOffPub.publish(empty_msg);
+  ROS_WARN("%s","I would take off now");
 }
 void Controller::land()
 {
@@ -192,13 +193,14 @@ void Controller::land()
 void Controller::sendCmd(double vx,double vy, double vz, double vyaw)
 {
   geometry_msgs::Twist cmdT;
-  cmdT.linear.x=vx;
-  cmdT.linear.y=vy;
-  cmdT.linear.z=vz;
-  cmdT.angular.z=vyaw;
+  cmdT.linear.x=std::min(vx,maxDispatchVel);
+  cmdT.linear.y=std::min(vy,maxDispatchVel);
+  cmdT.linear.z=std::min(vz,maxDispatchVel);
+  cmdT.angular.z=std::min(vyaw,maxDispatchVel);
   cmdT.angular.x=cmdT.angular.y=0;
 
-  cmdVelPub.publish(cmdT);
+  //cmdVelPub.publish(cmdT);
+  ROS_WARN("CMD: x:%.2f, y:%.2f, z:%.2f, yaw:%.2f",cmdT.linear.x,cmdT.linear.y,cmdT.linear.z,cmdT.angular.z);
 }
 void Controller::shutdown()
 {

@@ -3,7 +3,7 @@
 FeatureFinder::FeatureFinder(ros::NodeHandle& nh)
 {
   featurePub = nh.advertise<geometry_msgs::Pose>("feature_finder",1);
-  tagSub = nh.subscribe("feature_tag",5,&FeatureFinder::arTagCallback,this);
+  tagSub = nh.subscribe("feature_tag_tracker/ar_pose_marker",5,&FeatureFinder::arTagCallback,this);
 }
 
 void FeatureFinder::arTagCallback(const ar_track_alvar_msgs::AlvarMarkers::ConstPtr& msg)
