@@ -101,7 +101,7 @@ void Controller::baseCamCallback(const ar_track_alvar_msgs::AlvarMarkers::ConstP
       x_pid->update(lastSpottedLanding.x);
       y_pid->update(lastSpottedLanding.y);
       z_pid->update(currLandingGoal-lastSpottedLanding.z);
-
+      ROS_WARN("Height: %.2f",lastSpottedLanding.z);
       sendCmd(x_pid->signal,y_pid->signal,z_pid->signal,yaw_pid->signal);
     }
   }
@@ -184,8 +184,8 @@ void Controller::setDispatchState(State s)
 }
 void Controller::takeoff()
 {
-  //takeOffPub.publish(empty_msg);
-  ROS_WARN("%s","I would take off now");
+  takeOffPub.publish(empty_msg);
+  //ROS_WARN("%s","I would take off now");
 }
 void Controller::land()
 {
@@ -200,8 +200,8 @@ void Controller::sendCmd(double vx,double vy, double vz, double vyaw)
   cmdT.angular.z=std::min(vyaw,maxDispatchVel);
   cmdT.angular.x=cmdT.angular.y=0;
 
-  //cmdVelPub.publish(cmdT);
-  ROS_WARN("CMD: x:%.2f, y:%.2f, z:%.2f, yaw:%.2f",cmdT.linear.x,cmdT.linear.y,cmdT.linear.z,cmdT.angular.z);
+  cmdVelPub.publish(cmdT);
+  //ROS_WARN("CMD: x:%.2f, y:%.2f, z:%.2f, yaw:%.2f",cmdT.linear.x,cmdT.linear.y,cmdT.linear.z,cmdT.angular.z);
 }
 void Controller::shutdown()
 {
