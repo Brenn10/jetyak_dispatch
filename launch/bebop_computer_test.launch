@@ -26,7 +26,7 @@
   <node name="bebop_controller" pkg="jetyak_dispatch" type="controller_node" output="screen" >
     <param name="maxDispatchVel" type="double" value=".5"/>
     <param name="goalAltitude" type="double" value=".5"/>
-    <param name="landingHeight" type="double" value=".05"/>
+    <param name="landingHeight" type="double" value=".1"/>
     <param name="landingHeightDecrement" type="double" value=".01"/>
 
   </node>
