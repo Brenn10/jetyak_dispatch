@@ -11,7 +11,7 @@ void FeatureFinder::arTagCallback(const ar_track_alvar_msgs::AlvarMarkers::Const
   if(!msg->markers.empty())
   {
     geometry_msgs::Pose ftPose = msg->markers[0].pose.pose;
-    ROS_WARN("Tag Found: {x=%.2f, y=%.2f, z=%.2f}",ftPose.position.x,ftPose.position.y,ftPose.position.z);
+    ROS_INFO("Feature Found: {x=%.2f, y=%.2f, z=%.2f}",ftPose.position.x,ftPose.position.y,ftPose.position.z);
     featurePub.publish(ftPose);
   }
 }

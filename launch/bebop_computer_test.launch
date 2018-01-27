@@ -2,17 +2,7 @@
     <!-- Start bebop -->
   <include file="$(find bebop_tools)/launch/bebop_nodelet_iv.launch" />
 
-    <!-- Start camera -->
-  <node name="usb_cam" pkg="usb_cam" type="usb_cam_node" output="screen">
-    <param name="video_device" value="/dev/video1"/>
-    <param name="image_width" value="1280"/>
-    <param name="image_height" value="720"/>
-    <param name="pixel_format" value="yuyv"/>
-    <param name="camera_frame_id" value="usb_cam"/>
-    <param name="io_method" value="mmap"/>
-    <param name="brightness" value="150"/>
-    <param name="contrast" value="110"/>
-  </node>
+
 
     <!-- tag trackers-->
   <include ns="bebop_tag_tracker" file="$(find jetyak_dispatch)/launch/bebop_tag_tracker.launch" />
@@ -24,10 +14,10 @@
 
   <!-- package nodes -->
   <node name="bebop_controller" pkg="jetyak_dispatch" type="controller_node" output="screen" >
-    <param name="maxDispatchVel" type="double" value=".2"/>
-    <param name="goalAltitude" type="double" value=".5"/>
-    <param name="landingHeight" type="double" value=".2"/>
-    <param name="landingHeightDecrement" type="double" value=".01"/>
+    <param name="maxDispatchVel" value=".05"/>
+    <param name="landStartAlt" type="double" value="2"/>
+    <param name="landingHeight" type="double" value=".5"/>
+    <param name="landingHeightDecrement" type="double" value=".005"/>
 
   </node>
 

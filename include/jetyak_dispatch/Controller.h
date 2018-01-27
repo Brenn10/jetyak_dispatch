@@ -38,7 +38,7 @@ class Controller
     void featureFinderCallback(const geometry_msgs::Pose::ConstPtr& msg);
     void gpsCallback(const sensor_msgs::NavSatFix::ConstPtr& msg);
   private:
-
+    const double FAKE_AR_DIST = .2;
     //State tracker
 
     State state = landed;
@@ -62,7 +62,9 @@ class Controller
     PIDController *yaw_pid,
       *z_pid,
       *x_pid,
-      *y_pid;
+      *y_pid,
+      *landingy_pid,
+      *landingx_pid;
 
     double landStartAlt;
     double currAltitude;

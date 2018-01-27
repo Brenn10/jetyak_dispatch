@@ -19,10 +19,12 @@
 Controller::Controller(ros::NodeHandle& nh)
 {
   //PID Controllers
-  yaw_pid=new PIDController(.2,.05,0.0);
+  yaw_pid=new PIDController(.04,.01,0.0);
   z_pid=new PIDController(.4,-.1,0.0);
-  x_pid=new PIDController(.25,.8,0.0);
-  y_pid=new PIDController(.25,.8,0.0);
+  x_pid=new PIDController(.2,.1,0.0);
+  y_pid=new PIDController(.2,.1,0.0);
+  landingy_pid = new PIDController(.25,.8,0.0);
+  landingx_pid = new PIDController(.25,.8,0.0);
 
   //Publishers
   landPub = nh.advertise<std_msgs::Empty>("/bebop/land",1);
@@ -38,11 +40,10 @@ Controller::Controller(ros::NodeHandle& nh)
   lastSpottedLanding.x=lastSpottedLanding.y=lastSpottedLanding.z=0.0;
 
   //ros parameters
-  nh.param<double>("maxDispatchVel",maxDispatchVel,.5);
-  nh.param<double>("landStartAlt",landStartAlt,2.0);
-  nh.param<double>("landingHeight",landingHeight,.05);
-  nh.param<double>("landingHeightDecrement",landingHeightDecrement,.005);
-
+  ros::param::get("~maxDispatchVel",maxDispatchVel);
+  ros::param::get("~landStartAlt",landStartAlt);
+  ros::param::get("~landingHeight",landingHeight);
+  ros::param::get("~landingHeightDecrement",landingHeightDecrement);
   usleep(1000*1000); //wait to ensure everything is good
 }
 
@@ -61,9 +62,13 @@ void Controller::baseCamCallback(const ar_track_alvar_msgs::AlvarMarkers::ConstP
   {
     if(state==landing)
     {
+      ROS_WARN("Curr: %.2f, goal: %.2f",lastSpottedLanding.z,landingHeight);
       //if it was just within landing distance
       if(lastSpottedLanding.z<=landingHeight)
+      {
         land();
+        setDispatchState(landed);
+      }
       //if we lost it high up (most likely due to side to side movement)
       else
         setDispatchState(returning);
@@ -71,38 +76,49 @@ void Controller::baseCamCallback(const ar_track_alvar_msgs::AlvarMarkers::ConstP
   }
   else//tag found
   {
+    //If it is an atrociously small number, it can be thrown out
+    if(std::abs(msg->markers[0].pose.pose.position.x)+std::abs(msg->markers[0].pose.pose.position.y)+std::abs(msg->markers[0].pose.pose.position.z)<FAKE_AR_DIST)
+      return;
+    ROS_INFO("Bebop spotted at: %f %f %f",msg->markers[0].pose.pose.position.x,msg->markers[0].pose.pose.position.y,msg->markers[0].pose.pose.position.z);
     if(state==returning)//if was returning, now landing
     {
       setDispatchState(landing);
-
     }
-    if(state=landing)
+    if(state==landing)
     {
-      currLandingGoal= currLandingGoal-landingHeightDecrement;
-      lastSpottedLanding.x = -msg->markers[0].pose.pose.position.z;
-      lastSpottedLanding.y = msg->markers[0].pose.pose.position.y;
-      lastSpottedLanding.z = msg->markers[0].pose.pose.position.x;
-
-      tf::Quaternion q(
-        msg->markers[0].pose.pose.orientation.x,
-        msg->markers[0].pose.pose.orientation.y,
-        msg->markers[0].pose.pose.orientation.z,
-        msg->markers[0].pose.pose.orientation.w
-      );
-      tf::Matrix3x3 m(q);
-      double t_r, t_p, t_y;
-      m.getRPY(t_r, t_p, t_y);
-
-      t_y = (t_y-M_PI/2);
-      if(t_y<-M_PI) {
-        t_y = 2*M_PI+t_y;
+      if(msg->markers[0].pose.pose.position.z<landingHeight)
+      {
+        land();
+        setDispatchState(landed);
       }
-      yaw_pid->update(t_y);
-      x_pid->update(lastSpottedLanding.x);
-      y_pid->update(lastSpottedLanding.y);
-      z_pid->update(currLandingGoal-lastSpottedLanding.z);
-      ROS_WARN("Height: %.2f",lastSpottedLanding.z);
-      sendCmd(x_pid->signal,y_pid->signal,z_pid->signal,yaw_pid->signal);
+      else
+      {
+        currLandingGoal= currLandingGoal-landingHeightDecrement;
+        lastSpottedLanding.x = -msg->markers[0].pose.pose.position.y;
+        lastSpottedLanding.y = msg->markers[0].pose.pose.position.x;
+        lastSpottedLanding.z = msg->markers[0].pose.pose.position.z;
+
+        tf::Quaternion q(
+          msg->markers[0].pose.pose.orientation.x,
+          msg->markers[0].pose.pose.orientation.y,
+          msg->markers[0].pose.pose.orientation.z,
+          msg->markers[0].pose.pose.orientation.w
+        );
+        tf::Matrix3x3 m(q);
+        double t_r, t_p, t_y;
+        m.getRPY(t_r, t_p, t_y);
+
+        t_y = (t_y-M_PI/2);
+        if(t_y<-M_PI) {
+          t_y = 2*M_PI+t_y;
+        }
+        yaw_pid->update(t_y);
+        landingx_pid->update(-lastSpottedLanding.x);
+        landingy_pid->update(-lastSpottedLanding.y);
+        z_pid->update(currLandingGoal-lastSpottedLanding.z);
+        ROS_INFO("Height: %.2f",lastSpottedLanding.z);
+        sendCmd(landingx_pid->signal,landingy_pid->signal,z_pid->signal,yaw_pid->signal);
+      }
     }
   }
 }
@@ -114,6 +130,8 @@ TODO: Test
 */
 void Controller::featureFinderCallback(const geometry_msgs::Pose::ConstPtr& msg)
 {
+  if(std::abs(msg->position.x)+std::abs(msg->position.y)+std::abs(msg->position.z)<=FAKE_AR_DIST)
+    return;
   if(state==landed)
     setDispatchState(dispatched);
   else if(state==dispatched)
@@ -128,13 +146,14 @@ void Controller::featureFinderCallback(const geometry_msgs::Pose::ConstPtr& msg)
     }
     else
     {
+      x_pid->update(msg->position.x-.5);
+      y_pid->update(msg->position.y);
       z_pid->update(msg->position.z);
-      yaw_pid->update(msg->position.y);
+      yaw_pid->update(std::atan2(-msg->position.y,msg->position.x));
 
-      double vel = std::min(maxDispatchVel,msg->position.x/5-.5);
-      double angle = std::atan2(msg->position.y,msg->position.x);
-
-      sendCmd(-vel*std::cos(angle),-vel*std::sin(angle),z_pid->signal,yaw_pid->signal);
+      double xVel = std::min(x_pid->signal,maxDispatchVel);
+      double yVel = std::min(y_pid->signal,maxDispatchVel);
+      sendCmd(xVel,yVel,z_pid->signal,yaw_pid->signal);
     }
   }
 
@@ -148,7 +167,7 @@ TODO: implement
 */
 void Controller::gpsCallback(const sensor_msgs::NavSatFix::ConstPtr& msg)
 {
-  ROS_WARN("Long: %.6f    Lat: %.6f",msg->longitude, msg->latitude);
+  ROS_INFO("Long: %.6f    Lat: %.6f",msg->longitude, msg->latitude);
 }
 
 void Controller::setDispatchState(State s)
@@ -157,11 +176,12 @@ void Controller::setDispatchState(State s)
   x_pid->reset();
   y_pid->reset();
   z_pid->reset();
+  landingy_pid->reset();
+  landingx_pid->reset();
   switch (s)
   {
     case landing:{
       ROS_WARN("%s","Landing");
-      sendCmd(0,0,0,0);
       currLandingGoal=landStartAlt;
       break;
     }
@@ -197,7 +217,7 @@ void Controller::sendCmd(double vx,double vy, double vz, double vyaw)
   cmdT.linear.x=std::min(vx,maxDispatchVel);
   cmdT.linear.y=std::min(vy,maxDispatchVel);
   cmdT.linear.z=std::min(vz,maxDispatchVel);
-  cmdT.angular.z=std::min(vyaw,maxDispatchVel);
+  cmdT.angular.z=vyaw;
   cmdT.angular.x=cmdT.angular.y=0;
 
   cmdVelPub.publish(cmdT);
