@@ -79,9 +79,9 @@ void Controller::baseCamCallback(const ar_track_alvar_msgs::AlvarMarkers::ConstP
     if(state=landing)
     {
       currLandingGoal= currLandingGoal-landingHeightDecrement;
-      lastSpottedLanding.x = msg->markers[0].pose.pose.position.x;
+      lastSpottedLanding.x = -msg->markers[0].pose.pose.position.z;
       lastSpottedLanding.y = msg->markers[0].pose.pose.position.y;
-      lastSpottedLanding.z = msg->markers[0].pose.pose.position.z;
+      lastSpottedLanding.z = msg->markers[0].pose.pose.position.x;
 
       tf::Quaternion q(
         msg->markers[0].pose.pose.orientation.x,
