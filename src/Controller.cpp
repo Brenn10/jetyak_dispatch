@@ -120,7 +120,7 @@ void Controller::baseCamCallback(const ar_track_alvar_msgs::AlvarMarkers::ConstP
         z_pid->update(currLandingGoal-lastSpottedLanding.z);
 
         //Rotate velocities by the yaw of the quad
-        Eigen::Vector2d v(landinxx_pid->signal,landingy_pid->signal);
+        Eigen::Vector2d v(landingx_pid->signal,landingy_pid->signal);
         Eigen::Matrix2d T;
         T << cos(t_y),sin(t_y),
             -sin(t_y),cos(t_y);
