@@ -19,7 +19,7 @@
 Controller::Controller(ros::NodeHandle& nh)
 {
   //PID Controllers
-  yaw_pid=new PIDController(.04,.01,0.0);
+  yaw_pid=new PIDController(.1,.05,0.0);
   z_pid=new PIDController(.4,-.1,0.0);
   x_pid=new PIDController(.2,.1,0.0);
   y_pid=new PIDController(.2,.1,0.0);
@@ -108,13 +108,13 @@ void Controller::baseCamCallback(const ar_track_alvar_msgs::AlvarMarkers::ConstP
         double t_r, t_p, t_y;
         m.getRPY(t_r, t_p, t_y);
 
-        t_y = (t_y-M_PI/2);
+        t_y = (t_y-M_PI);
         if(t_y<-M_PI) {
           t_y = 2*M_PI+t_y;
         }
 
-
-        yaw_pid->update(t_y);
+        ROS_WARN("YAW: %.3f",t_y);
+        yaw_pid->update(-t_y);
         landingx_pid->update(-lastSpottedLanding.x);
         landingy_pid->update(-lastSpottedLanding.y);
         z_pid->update(currLandingGoal-lastSpottedLanding.z);
@@ -122,8 +122,8 @@ void Controller::baseCamCallback(const ar_track_alvar_msgs::AlvarMarkers::ConstP
         //Rotate velocities by the yaw of the quad
         Eigen::Vector2d v(landingx_pid->signal,landingy_pid->signal);
         Eigen::Matrix2d T;
-        T << cos(t_y),sin(t_y),
-            -sin(t_y),cos(t_y);
+        T << cos(t_y),-sin(t_y),
+            sin(t_y),cos(t_y);
         v = T*v;
 
         ROS_INFO("Height: %.2f",lastSpottedLanding.z);
@@ -159,7 +159,7 @@ void Controller::featureFinderCallback(const geometry_msgs::Pose::ConstPtr& msg)
       x_pid->update(msg->position.x-.5);
       y_pid->update(msg->position.y);
       z_pid->update(msg->position.z);
-      yaw_pid->update(std::atan2(-msg->position.y,msg->position.x));
+      yaw_pid->update(-std::atan2(-msg->position.y,msg->position.x));
 
       double xVel = std::min(x_pid->signal,maxDispatchVel);
       double yVel = std::min(y_pid->signal,maxDispatchVel);
