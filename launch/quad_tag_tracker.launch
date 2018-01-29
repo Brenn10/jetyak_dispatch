@@ -10,6 +10,7 @@
     <param name="brightness" value="150"/>
     <param name="contrast" value="110"/>
   </node>
+
 	<!--<arg name="marker_size" default="9.7" /> -->
 	<arg name="marker_size" default="4.8" />
 	<arg name="max_new_marker_error" default="0.08" />
