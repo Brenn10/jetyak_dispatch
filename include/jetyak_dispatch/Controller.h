@@ -22,7 +22,6 @@ Modified: Jan 23 2018
 #include "geometry_msgs/Pose.h"
 #include "sensor_msgs/NavSatFix.h"
 #include "ar_track_alvar_msgs/AlvarMarkers.h"
-#include "bebop_msgs/Ardrone3PilotingStateAltitudeChanged.h"
 
 // This class controls the quadcopter
 class Controller

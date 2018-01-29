@@ -27,14 +27,14 @@ Controller::Controller(ros::NodeHandle& nh)
   landingx_pid = new PIDController(.25,.8,0.0);
 
   //Publishers
-  landPub = nh.advertise<std_msgs::Empty>("/bebop/land",1);
-  takeOffPub = nh.advertise<std_msgs::Empty>("/bebop/takeoff",1);
-  cmdVelPub = nh.advertise<geometry_msgs::Twist>("/bebop/cmd_vel",1);
+  landPub = nh.advertise<std_msgs::Empty>("land",1);
+  takeOffPub = nh.advertise<std_msgs::Empty>("takeoff",1);
+  cmdVelPub = nh.advertise<geometry_msgs::Twist>("cmd_vel",1);
 
   //Subscribers
-  baseCamSub = nh.subscribe("bebop_tag_tracker/ar_pose_marker",5,&Controller::baseCamCallback, this);
+  baseCamSub = nh.subscribe("quad_tag_tracker/ar_pose_marker",5,&Controller::baseCamCallback, this);
   featureSub = nh.subscribe("feature_finder",5,&Controller::featureFinderCallback, this);
-  gpsSub = nh.subscribe("/bebop/fix",5,&Controller::gpsCallback,this);
+  gpsSub = nh.subscribe("fix",5,&Controller::gpsCallback,this);
 
   //assorted variable initializations
   lastSpottedLanding.x=lastSpottedLanding.y=lastSpottedLanding.z=0.0;
@@ -79,19 +79,19 @@ void Controller::baseCamCallback(const ar_track_alvar_msgs::AlvarMarkers::ConstP
     //If it is an atrociously small number, it can be thrown out
     if(std::abs(msg->markers[0].pose.pose.position.x)+std::abs(msg->markers[0].pose.pose.position.y)+std::abs(msg->markers[0].pose.pose.position.z)<FAKE_AR_DIST)
       return;
-    ROS_INFO("Bebop spotted at: %f %f %f",msg->markers[0].pose.pose.position.x,msg->markers[0].pose.pose.position.y,msg->markers[0].pose.pose.position.z);
+    ROS_INFO("Quad spotted at: %f %f %f",msg->markers[0].pose.pose.position.x,msg->markers[0].pose.pose.position.y,msg->markers[0].pose.pose.position.z);
     if(state==returning)//if was returning, now landing
     {
       setDispatchState(landing);
     }
-    if(state==landing)
+    if(state==landing)  //if was landing
     {
-      if(msg->markers[0].pose.pose.position.z<landingHeight)
+      if(msg->markers[0].pose.pose.position.z<landingHeight) // if height is small, land
       {
         land();
         setDispatchState(landed);
       }
-      else
+      else //otherwise decrement goal height and fix x,y position
       {
         currLandingGoal= currLandingGoal-landingHeightDecrement;
         lastSpottedLanding.x = -msg->markers[0].pose.pose.position.y;
@@ -112,12 +112,22 @@ void Controller::baseCamCallback(const ar_track_alvar_msgs::AlvarMarkers::ConstP
         if(t_y<-M_PI) {
           t_y = 2*M_PI+t_y;
         }
+
+
         yaw_pid->update(t_y);
         landingx_pid->update(-lastSpottedLanding.x);
         landingy_pid->update(-lastSpottedLanding.y);
         z_pid->update(currLandingGoal-lastSpottedLanding.z);
+
+        //Rotate velocities by the yaw of the quad
+        Eigen::Vector2d v(landinxx_pid->signal,landingy_pid->signal);
+        Eigen::Matrix2d T;
+        T << cos(t_y),sin(t_y),
+            -sin(t_y),cos(t_y);
+        v = T*v;
+
         ROS_INFO("Height: %.2f",lastSpottedLanding.z);
-        sendCmd(landingx_pid->signal,landingy_pid->signal,z_pid->signal,yaw_pid->signal);
+        sendCmd(v[0],v[1],z_pid->signal,yaw_pid->signal);
       }
     }
   }
@@ -159,7 +169,7 @@ void Controller::featureFinderCallback(const geometry_msgs::Pose::ConstPtr& msg)
 
 }
 
-/**get the gps coords for when returning
+/**get the gps coords of quad for when returning
 get coords of boat and set as endpoint of a flightplan
 upload flightplan
 call flightplan

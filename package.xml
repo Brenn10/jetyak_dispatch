@@ -35,10 +35,10 @@
   <run_depend>ar_track_alvar</run_depend>
   <run_depend>visualization_msgs</run_depend>
   <run_depend>sensor_msgs</run_depend>
- <run_depend>tf</run_depend>
+  <run_depend>tf</run_depend>
   <run_depend>message_filters</run_depend>
   <run_depend>opencv2</run_depend>
-<run_depend>bullet</run_depend>
+  <run_depend>bullet</run_depend>
 
 
   <export>
